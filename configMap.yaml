@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecommerce-db-configmap
+data:
+  DB_HOST: ecommerce-db-service
+  DB_PORT: "3306"

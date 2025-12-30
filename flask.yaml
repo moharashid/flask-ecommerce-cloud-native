@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-ecommerce-web
+  labels:
+    app: flask-ecommerce-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flask-ecommerce-web
+  template:
+    metadata:
+      labels:
+        app: flask-ecommerce-web
+    spec:
+      containers:
+        - name: flask-ecommerce-web
+          image: ecommerceflaskacr123.azurecr.io/flask-ecommerce:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          env:
+            # --- Secrets ---
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: flask-ecommerce-secret
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: flask-ecommerce-secret
+                  key: MYSQL_DATABASE
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: flask-ecommerce-secret
+                  key: MYSQL_USER
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: flask-ecommerce-secret
+                  key: MYSQL_PASSWORD
+
+            # --- ConfigMap (non-sensitive info) ---
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-db-configmap
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: ecommerce-db-configmap
+                  key: DB_PORT
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-ecommerce-web-service
+spec:
+  selector:
+    app: flask-ecommerce-web
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      # nodePort: 30001
