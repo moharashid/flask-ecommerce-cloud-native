@@ -1,0 +1,39 @@
+name: Deploy  eCommerce on AKS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Login to ACR
+      run: |
+        az acr login --name ${{ secrets.ACR_NAME }}
+
+    - name: Build and Push Docker Image
+      run: |
+        docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/flask-ecommerce:latest .
+        docker push ${{ secrets.ACR_LOGIN_SERVER }}/flask-ecommerce:latest
+
+    - name: Set AKS Context
+      run: |
+        az aks get-credentials \
+          --resource-group ${{ secrets.RESOURCE_GROUP }} \
+          --name ${{ secrets.AKS_CLUSTER_NAME }} \
+          --overwrite-existing
+
+    - name: Restart Kubernetes Deployment
+      run: |
+        kubectl rollout restart deployment flask-ecommerce-web
