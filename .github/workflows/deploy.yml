@@ -1,4 +1,4 @@
-name: Deploy  eCommerce on AKS
+name: Deploy eCommerce on AKS
 
 on:
   push:
@@ -24,8 +24,8 @@ jobs:
 
     - name: Build and Push Docker Image
       run: |
-        docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/flask-ecommerce:latest .
-        docker push ${{ secrets.ACR_LOGIN_SERVER }}/flask-ecommerce:latest
+        docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/flask-ecommerce:${{ github.sha }} .
+        docker push ${{ secrets.ACR_LOGIN_SERVER }}/flask-ecommerce:${{ github.sha }}
 
     - name: Set AKS Context
       run: |
@@ -34,6 +34,7 @@ jobs:
           --name ${{ secrets.AKS_CLUSTER_NAME }} \
           --overwrite-existing
 
-    - name: Restart Kubernetes Deployment
+    - name: Deploy to AKS
       run: |
-        kubectl rollout restart deployment flask-ecommerce-web
+        kubectl set image deployment/flask-ecommerce-web \
+          flask-ecommerce-web=${{ secrets.ACR_LOGIN_SERVER }}/flask-ecommerce:${{ github.sha }}
