@@ -1,28 +1,25 @@
-# Resource Group
 resource "azurerm_resource_group" "rg" {
-  name     = var.resource_group_name
-  location = var.location
+  name     = "ecommerce-rg"
+  location = "polandcentral"
 }
 
-# Azure Container Registry
 resource "azurerm_container_registry" "acr" {
-  name                = var.acr_name
+  name                = "ecommerceflaskacr123"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   sku                 = "Basic"
   admin_enabled       = false
 }
 
-# AKS Cluster
 resource "azurerm_kubernetes_cluster" "aks" {
-  name                = "${var.project_name}-aks"
+  name                = "ecommerce-aks"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  dns_prefix          = var.project_name
+  dns_prefix          = "ecommerceaks"
 
   default_node_pool {
-    name       = "nodepool1"
-    node_count = 1
+    name       = "default"
+    node_count = 2
     vm_size    = "Standard_B2s"
   }
 
@@ -31,9 +28,9 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 }
 
-# Grant AKS permission to pull from ACR
-resource "azurerm_role_assignment" "acr_pull" {
-  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
-  role_definition_name = "AcrPull"
+# Allow AKS to pull images from ACR
+resource "azurerm_role_assignment" "aks_acr" {
   scope                = azurerm_container_registry.acr.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
 }
